@@ -3,11 +3,13 @@ enum maze_type {
     NONE
 };
 
-enum maze_desply {
+enum maze_display {
     SPACE = 0,
     WALL = 1,
     PLAYER_1 = 2,
-    PALYER_2 = 3
+    PALYER_2 = 3,
+    GOOL = 4,
 };
+
 char **maze_generator(size_t height, size_t width, maze_type type);
 
