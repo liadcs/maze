@@ -28,3 +28,5 @@ enum move_type {
 char **maze_generator(size_t height, size_t width, game_type game_type, maze_generator_type generator_type);
 
 //solver(char **maze, move_type move)
+
+void print_map(char **maze, size_t height, size_t width);
