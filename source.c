@@ -4,7 +4,7 @@
 
 #define ACCESS_SLOT(maze , row , col, _width)  (*(char*)((char*)(maze) + col + row * _width))
 
-void print_maze(char* maze, size_t height, size_t width) {
+void print_maze(char *maze, size_t height, size_t width) {
     printf("\n");
     for (size_t iRow = 0; iRow < height; iRow++) {
         for (size_t iCol = 0; iCol < width; iCol++) {
@@ -14,7 +14,7 @@ void print_maze(char* maze, size_t height, size_t width) {
     }
 }
 
-void print_path(char* maze, size_t height, size_t width) {
+void print_path(char *maze, size_t height, size_t width) {
     printf("\n");
     for (size_t iRow = 0; iRow < height; iRow++) {
         for (size_t iCol = 0; iCol < width; iCol++) {
@@ -25,7 +25,7 @@ void print_path(char* maze, size_t height, size_t width) {
 }
 
 // BFS recursive
-char BFS_recursive_solver_aux(char* maze, char* was_here, char* correct_path, size_t height, size_t width, size_t pos_x, size_t pos_y) {
+char BFS_recursive_solver_aux(char *maze, char *was_here, char *correct_path, size_t height, size_t width, size_t pos_x, size_t pos_y) {
     if (ACCESS_SLOT(maze, pos_x, pos_y, width) == TARGET) {
         ACCESS_SLOT(correct_path, pos_x, pos_y, width) = SOLUTION;
         return 1;
@@ -65,13 +65,13 @@ char BFS_recursive_solver_aux(char* maze, char* was_here, char* correct_path, si
     return 0;
 }
 
-char* BFS_recursive_solver(char* maze, size_t height, size_t width, size_t pos_x, size_t pos_y) {
-    char* was_here = malloc(height * width * sizeof(char));
+char *BFS_recursive_solver(char *maze, size_t height, size_t width, size_t pos_x, size_t pos_y) {
+    char *was_here = malloc(height * width * sizeof(char));
     if (was_here == NULL) {
         return NULL;
     }
 
-    char* correct_path = malloc(height * width * sizeof(char));
+    char *correct_path = malloc(height * width * sizeof(char));
     if (correct_path == NULL) {
         free(was_here);
         return NULL;
@@ -89,53 +89,39 @@ char* BFS_recursive_solver(char* maze, size_t height, size_t width, size_t pos_x
 }
 
 
-char* find_len(char* solution_maze, size_t width, size_t pos_x, size_t pos_y, size_t cur_int, size_t* len) {
-    char* solution_array = NULL;
+char *find_len(char *solution_maze, size_t width, size_t pos_x, size_t pos_y, size_t cur_int, size_t *len) {
+    char *solution_array = NULL;
     switch (ACCESS_SLOT(solution_maze, pos_x, pos_y, width)) {
-    case UP:
-        solution_array = find_len(solution_maze, width, pos_x - 1, pos_y, cur_int + 1, len);
-        break;
-    case DOWN:
-        solution_array = find_len(solution_maze, width, pos_x + 1, pos_y, cur_int + 1, len);
-        break;
-    case RIGHT:
-        solution_array = find_len(solution_maze, width, pos_x, pos_y + 1, cur_int + 1, len);
-        break;
-    case LEFT:
-        solution_array = find_len(solution_maze, width, pos_x, pos_y - 1, cur_int + 1, len);
-        break;
-    default:
-        solution_array = malloc(sizeof(char) * cur_int);
-        if (solution_array == NULL) {
-            return NULL;
-        }
-        *len = cur_int + 1;
-        solution_array[cur_int] = SOLUTION;
-        return solution_array;
+        case UP:
+            solution_array = find_len(solution_maze, width, pos_x - 1, pos_y, cur_int + 1, len);
+            break;
+        case DOWN:
+            solution_array = find_len(solution_maze, width, pos_x + 1, pos_y, cur_int + 1, len);
+            break;
+        case RIGHT:
+            solution_array = find_len(solution_maze, width, pos_x, pos_y + 1, cur_int + 1, len);
+            break;
+        case LEFT:
+            solution_array = find_len(solution_maze, width, pos_x, pos_y - 1, cur_int + 1, len);
+            break;
+        default:
+            solution_array = malloc(sizeof(char) * cur_int);
+            if (solution_array == NULL) {
+                return NULL;
+            }
+            *len = cur_int + 1;
+            solution_array[cur_int] = SOLUTION;
+            return solution_array;
     }
     solution_array[cur_int] = ACCESS_SLOT(solution_maze, pos_x, pos_y, width);
     return solution_array;
 }
 
 
-char* solver(char* maze, size_t height, size_t width, size_t pos_x, size_t pos_y, size_t* result_size) {
-
-    /*
-    
-        char demo_maze[5][7] = {
-                                0,1,1,1,0,1,1,
-                                0,0,1,0,0,0,0,
-                                1,0,1,1,0,1,0,
-                                1,0,1,1,0,1,0,
-                                1,0,0,0,0,1,4
-                                };
-    
-    */
-
-
+char *solver(char *maze, size_t height, size_t width, size_t pos_x, size_t pos_y, size_t *result_size) {
     char *solution_maze = BFS_recursive_solver(maze, height, width, pos_x, pos_y);
     //print_path(solution_maze, height, width);
-    char* solution_array = find_len(solution_maze, width, pos_x, pos_y, 0, result_size);
+    char *solution_array = find_len(solution_maze, width, pos_x, pos_y, 0, result_size);
     free(solution_maze);
     return solution_array;
 }

@@ -6,12 +6,13 @@
 
 #include "maze.h"
 
+#define ACCESS_SLOT(maze , row , col, _width)  (*(char*)((char*)(maze) + col + row * _width))
 
 #define BLOCK_SIZE 4
 #define GAP 2
 
-#define SPACE_DISPLAY "|||"
-#define WALL_DISPLAY "   "
+#define SPACE_DISPLAY "   "
+#define WALL_DISPLAY "|||"
 #define PLAYER_1_DISPLY " X "
 #define PLAYER_2_DISPLY " Y "
 #define BOTH_PLYER_DISPLY " 2 "
@@ -34,10 +35,11 @@ void print_maze_map(char *maze, int width, int height) {
                 case SPACE: disply = SPACE_DISPLAY;  break;
                 case WALL: disply = WALL_DISPLAY;  break;
                 case PLAYER_1: disply = PLAYER_1_DISPLY;  break;
-                case PALYER_2: disply = PLAYER_2_DISPLY;  break;
+                case PLAYER_2: disply = PLAYER_2_DISPLY;  break;
                 case TWO_PLAYER_SAME_CELL: disply = PLAYER_2_DISPLY;  break;
-                case TAEGET: disply = TARGET_DISPLY;  break;
+                case TARGET: disply = TARGET_DISPLY;  break;
                 default:
+                    char a = maze[y * width + x];
                     disply = NULL;
             }
             printf("%s", disply);
@@ -68,7 +70,10 @@ void carve_maze(char *maze, int width, int height, int x, int y) {
         y1 = y + dy;
         x2 = x1 + dx;
         y2 = y1 + dy;
-        if (x2 > 0 && x2 < width && y2 > 0 && y2 < height && maze[y1 * width + x1] == WALL && maze[y2 * width + x2] == WALL) {
+        if (x2 > 0 && x2 < width && y2 > 0 && y2 < height
+            && maze[y1 * width + x1] == WALL
+            && maze[y2 * width + x2] == WALL) {
+
             maze[y1 * width + x1] = SPACE;
             maze[y2 * width + x2] = SPACE;
             x = x2; y = y2;
@@ -89,11 +94,8 @@ void generator_simple(char *maze, int height, int width) {
 
     int x, y;
 
-    /* Seed the random number generator. */
-    srand((unsigned int)time(NULL));
-
     memset(maze, WALL, width * height);
-    maze[1 * width + 1] = SPACE;
+    maze[width + 1] = SPACE;
 
     /* Carve the maze. */
     for (y = 1; y < height; y += 2) {
@@ -104,14 +106,17 @@ void generator_simple(char *maze, int height, int width) {
 
     /* Set up the entry and exit. */
     maze[1] = TWO_PLAYER_SAME_CELL;
-    maze[1 * width + 1] = WALL;
-    maze[(height - 1) * width + (width - 2)] = TAEGET;
+    maze[1 * width + 1] = SPACE;
+    maze[(height - 1) * width + (width - 2)] = TARGET;
 }
 
 
 char *maze_generator(int height, int width, void (*generator)(char *, int height, int width)) {
 
     char *maze = (char *)malloc(width * height * sizeof(char));
+
+    /* Seed the random number generator. */
+    srand((unsigned int)time(NULL));
 
     if (!maze) {
         return NULL;
@@ -172,9 +177,120 @@ bool move_player(char *maze, int height, int width, player *curent_player, char 
             res = false;
             break;
     }
-    maze[curent_player->y * height + curent_player->x] += curent_player->player_type;
+    maze[curent_player->y * width + curent_player->x] += curent_player->player_type;
     return res;
 }
+
+
+// BFS recursive
+char BFS_recursive_solver_aux(char *maze, char *was_here, char *correct_path, size_t height, size_t width, size_t pos_x, size_t pos_y) {
+    if (ACCESS_SLOT(maze, pos_x, pos_y, width) == TARGET) {
+        ACCESS_SLOT(correct_path, pos_x, pos_y, width) = SOLUTION;
+        return 1;
+    }
+    if (ACCESS_SLOT(was_here, pos_x, pos_y, width) == 1 || ACCESS_SLOT(maze, pos_x, pos_y, width) == 1) {
+        return 0;
+    }
+    ACCESS_SLOT(was_here, pos_x, pos_y, width) = 1;
+
+    if (pos_x != 0) {
+        if (BFS_recursive_solver_aux(maze, was_here, correct_path, height, width, pos_x - 1, pos_y) != 0) {
+            ACCESS_SLOT(correct_path, pos_x, pos_y, width) = UP;
+            return UP;
+        }
+    }
+
+    if (pos_x != height - 1) {
+        if (BFS_recursive_solver_aux(maze, was_here, correct_path, height, width, pos_x + 1, pos_y) != 0) {
+            ACCESS_SLOT(correct_path, pos_x, pos_y, width) = DOWN;
+            return DOWN;
+        }
+    }
+
+    if (pos_y != 0) {
+        if (BFS_recursive_solver_aux(maze, was_here, correct_path, height, width, pos_x, pos_y - 1) != 0) {
+            ACCESS_SLOT(correct_path, pos_x, pos_y, width) = LEFT;
+            return LEFT;
+        }
+    }
+
+    if (pos_y != width - 1) {
+        if (BFS_recursive_solver_aux(maze, was_here, correct_path, height, width, pos_x, pos_y + 1) != 0) {
+            ACCESS_SLOT(correct_path, pos_x, pos_y, width) = RIGHT;
+            return RIGHT;
+        }
+    }
+    return 0;
+}
+
+char *BFS_recursive_solver(char *maze, size_t height, size_t width, size_t pos_x, size_t pos_y) {
+    char *was_here = malloc(height * width * sizeof(char));
+    if (was_here == NULL) {
+        return NULL;
+    }
+
+    char *correct_path = malloc(height * width * sizeof(char));
+    if (correct_path == NULL) {
+        free(was_here);
+        return NULL;
+    }
+
+    for (size_t row = 0; row < height; row++) {
+        for (size_t col = 0; col < width; col++) {
+            ACCESS_SLOT(was_here, row, col, width) = 0;
+            ACCESS_SLOT(correct_path, row, col, width) = '0';
+        }
+    }
+    BFS_recursive_solver_aux(maze, was_here, correct_path, height, width, pos_x, pos_y);
+    free(was_here);
+    return correct_path;
+}
+
+
+char *find_len(char *solution_maze, size_t width, size_t pos_x, size_t pos_y, size_t cur_int, size_t *len) {
+    char *solution_array = NULL;
+    switch (ACCESS_SLOT(solution_maze, pos_x, pos_y, width)) {
+        case UP:
+            solution_array = find_len(solution_maze, width, pos_x - 1, pos_y, cur_int + 1, len);
+            break;
+        case DOWN:
+            solution_array = find_len(solution_maze, width, pos_x + 1, pos_y, cur_int + 1, len);
+            break;
+        case RIGHT:
+            solution_array = find_len(solution_maze, width, pos_x, pos_y + 1, cur_int + 1, len);
+            break;
+        case LEFT:
+            solution_array = find_len(solution_maze, width, pos_x, pos_y - 1, cur_int + 1, len);
+            break;
+        default:
+            solution_array = malloc(sizeof(char) * cur_int);
+            if (solution_array == NULL) {
+                return NULL;
+            }
+            *len = cur_int + 1;
+            solution_array[cur_int] = SOLUTION;
+            return solution_array;
+    }
+    solution_array[cur_int] = ACCESS_SLOT(solution_maze, pos_x, pos_y, width);
+    return solution_array;
+}
+
+
+char *solver(char *maze, size_t height, size_t width, size_t pos_x, size_t pos_y, size_t *result_size) {
+    char *solution_maze = BFS_recursive_solver(maze, height, width, pos_x, pos_y);
+    //print_path(solution_maze, height, width);
+    char *solution_array = find_len(solution_maze, width, pos_x, pos_y, 0, result_size);
+    free(solution_maze);
+    return solution_array;
+}
+
+char get_clue(char *maze, size_t height, size_t width, size_t pos_x, size_t pos_y, size_t *result_size) {
+    char *sol = solver(maze, height, width, pos_x, pos_y, result_size);
+    char clue = sol[0];
+    free(sol);
+    return clue;
+}
+
 
 int main(int argc, char *argv[]) {
 
@@ -182,7 +298,7 @@ int main(int argc, char *argv[]) {
     char *maze;
     player player1;
     char next_move;
-
+    player1.player_type = PLAYER_1;
     printf("Hello! Welcome to the best maze game ever.\n");
 
     while (true) {
@@ -198,9 +314,10 @@ int main(int argc, char *argv[]) {
             break;
         }
     }
+    fflush(stdin);
 
-    height = height * 2 + 1;    // double the size for better look
-    width = width * 2 + 1;      // double the size for better look
+    height = height * GAP + 1;    // double the size for better look
+    width = width * GAP + 1;      // double the size for better look
 
     maze = maze_generator(width, height, generator_simple);
 
@@ -220,7 +337,7 @@ int main(int argc, char *argv[]) {
         if (scanf("%c", &next_move) != 1) {
             continue;
         }
-        good_last_move = move_player(maze, width, height, &player1, next_move);
+        good_last_move = move_player(maze, height, width, &player1, next_move);
         print_maze_map(maze, width, height);
         if (!good_last_move) {
             printf("Wrong input\n");
