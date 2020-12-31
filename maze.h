@@ -25,8 +25,17 @@ enum move_type {
     EXIT = 'E'
 };
 
+/*
+* generate maze by type
+*/
 char **maze_generator(size_t height, size_t width, game_type game_type, maze_generator_type generator_type);
 
-//solver(char **maze, move_type move)
+/*
+* solver the maze by (x,y) and type to solve
+*/
+char *solver(char **maze, size_t height, size_t width, size_t pos_x, size_t pos_y, size_t *result_size);
 
+/*
+* print maze
+*/
 void print_map(char **maze, size_t height, size_t width);
