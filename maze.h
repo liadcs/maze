@@ -1,4 +1,9 @@
-enum maze_type {
+enum game_type {
+    ONE_PLAYER,
+    TOW_PLAYERS
+};
+
+enum maze_generator_type {
     DFS,
     NONE
 };
@@ -11,5 +16,15 @@ enum maze_display {
     GOOL = 4,
 };
 
-char **maze_generator(size_t height, size_t width, maze_type type);
+enum move_type {
+    RIGHT = 'R',
+    LEFT = 'L',
+    UP = 'U',
+    CLUE = 'C',
+    SOLUTION = 'S',
+    EXIT = 'E'
+};
 
+char **maze_generator(size_t height, size_t width, game_type game_type, maze_generator_type generator_type);
+
+//solver(char **maze, move_type move)
